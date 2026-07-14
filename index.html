@@ -127,7 +127,7 @@ function cleanRows(rows){
     return n&&!skip.includes(n.toLowerCase())&&!isErr(String(r[1]||''));
   });
 }
-function barColor(p){return p>=100?'#20c5b0':p>=50?'#f59e0b':'#ef4444';}
+function barColor(p){return p>=100?'#20c5b0':p>=80?'#f59e0b':'#ef4444';}
 
 // ── DONUT CHART ──────────────────────────────────────────────
 let donutChart=null;
