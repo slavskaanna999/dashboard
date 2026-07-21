@@ -112,8 +112,11 @@ function parsePct(s){
   if(!str||str.startsWith('#'))return 0;
   const n=parseFloat(str.replace(/[^\d.,\-]/g,'').replace(',','.'));
   if(isNaN(n))return 0;
-  if(!str.includes('%')&&Math.abs(n)<5)return Math.round(n*100);
-  return Math.round(n);
+  // Таблица всегда хранит как дробь (0.57=57%, 7.35=735%)
+  // Если есть знак % — число уже готовое
+  if(str.includes('%')) return Math.round(n);
+  // Без % — всегда дробь, умножаем на 100
+  return Math.round(n*100);
 }
 function parseMoney(s){
   if(!s)return 0;
