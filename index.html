@@ -165,15 +165,14 @@ function drawChart(id,rows){
 
     if(isCapped){
       // Столбец до верха с зазубренным верхом
+      ctx.fillStyle=barColor(p);
       ctx.fillRect(bx,PT+4,barW,cH-4);
-      ctx.fill();
       // Зазубрина (знак обрезки)
       ctx.fillStyle='#fff';
       for(let zi=0;zi<3;zi++){
         const zy=PT+5+zi*4;
         ctx.fillRect(bx,zy,barW,2);
       }
-      ctx.fillStyle=barColor(p);
     } else {
       if(bh>r*2){
         ctx.beginPath();ctx.moveTo(bx+r,y);ctx.lineTo(bx+barW-r,y);
