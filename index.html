@@ -121,10 +121,18 @@ function drawChart(id,rows){
   ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
   const labels=rows.map(r=>r[0]),pcts=rows.map(r=>r[1]),n=rows.length;
   if(!n){CHARTS[id]={barCenters:[],labels:[],pcts:[]};return;}
-  const PL=34,PR=6,PT=18,PB=2;
+  const PL=38,PR=6,PT=18,PB=2;
   const cW=W-PL-PR,cH=H-PT-PB;
   const mx=Math.max(...pcts,0);
-  const sMax=Math.max(120,Math.ceil((mx+15)/10)*10);
+
+  // Если есть выброс (>400%), обрезаем ось на уровне остальных + 20%
+  const sorted=[...pcts].sort((a,b)=>a-b);
+  const p90=sorted[Math.max(0,Math.floor(sorted.length*0.75))];
+  const CAP_THRESHOLD=400;
+  const useCap=mx>CAP_THRESHOLD && p90<mx*0.5;
+  const capVal=useCap?Math.max(120,Math.ceil((p90*1.4+20)/10)*10):null;
+  const sMax=useCap?capVal:Math.max(120,Math.ceil((mx+15)/10)*10);
+
   for(let i=0;i<=6;i++){
     const v=Math.round(sMax*i/6),y=PT+cH-(v/sMax)*cH;
     ctx.strokeStyle='rgba(32,197,176,0.10)';ctx.lineWidth=1;
@@ -132,22 +140,53 @@ function drawChart(id,rows){
     ctx.fillStyle='#7aacac';ctx.font='9px Arial,sans-serif';
     ctx.textAlign='right';ctx.fillText(v+'%',PL-3,y+3);
   }
+
+  // Линия обрезки если cap активен
+  if(useCap){
+    ctx.strokeStyle='rgba(100,100,100,0.25)';ctx.lineWidth=1;ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.moveTo(PL,PT);ctx.lineTo(PL+cW,PT);ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
   const slotW=cW/n,barW=Math.max(Math.min(slotW*0.52,40),8);
   const bc=[];
   pcts.forEach((p,i)=>{
-    const cx=PL+slotW*i+slotW/2,bh=Math.max((p/sMax)*cH,p>0?2:0),y=PT+cH-bh;
+    const cx=PL+slotW*i+slotW/2;
+    const isCapped=useCap&&p>capVal;
+    const drawP=isCapped?capVal:p;
+    const bh=Math.max((drawP/sMax)*cH,p>0?2:0);
+    const y=PT+cH-bh;
     bc.push(cx);
     ctx.fillStyle=barColor(p);
     const bx=cx-barW/2,r=Math.min(4,barW/2);
-    if(bh>r*2){
-      ctx.beginPath();ctx.moveTo(bx+r,y);ctx.lineTo(bx+barW-r,y);
-      ctx.quadraticCurveTo(bx+barW,y,bx+barW,y+r);
-      ctx.lineTo(bx+barW,y+bh);ctx.lineTo(bx,y+bh);ctx.lineTo(bx,y+r);
-      ctx.quadraticCurveTo(bx,y,bx+r,y);ctx.closePath();
-    }else if(bh>0){ctx.fillRect(bx,y,barW,bh);}
-    ctx.fill();
-    ctx.fillStyle='#1a4a4a';ctx.font='bold 10px Arial,sans-serif';
-    ctx.textAlign='center';ctx.fillText(p+'%',cx,Math.max(y-3,PT+10));
+
+    if(isCapped){
+      // Столбец до верха с зазубренным верхом
+      ctx.fillRect(bx,PT+4,barW,cH-4);
+      ctx.fill();
+      // Зазубрина (знак обрезки)
+      ctx.fillStyle='#fff';
+      for(let zi=0;zi<3;zi++){
+        const zy=PT+5+zi*4;
+        ctx.fillRect(bx,zy,barW,2);
+      }
+      ctx.fillStyle=barColor(p);
+    } else {
+      if(bh>r*2){
+        ctx.beginPath();ctx.moveTo(bx+r,y);ctx.lineTo(bx+barW-r,y);
+        ctx.quadraticCurveTo(bx+barW,y,bx+barW,y+r);
+        ctx.lineTo(bx+barW,y+bh);ctx.lineTo(bx,y+bh);ctx.lineTo(bx,y+r);
+        ctx.quadraticCurveTo(bx,y,bx+r,y);ctx.closePath();
+      }else if(bh>0){ctx.fillRect(bx,y,barW,bh);}
+      ctx.fill();
+    }
+
+    // Лейбл % над столбцом
+    ctx.fillStyle='#1a4a4a';
+    ctx.font='bold 10px Arial,sans-serif';
+    ctx.textAlign='center';
+    const labelY=isCapped?PT+2:Math.max(y-3,PT+10);
+    ctx.fillText(p+'%',cx,labelY);
   });
   CHARTS[id]={barCenters:bc,labels,pcts};
   placePhotos(id);
