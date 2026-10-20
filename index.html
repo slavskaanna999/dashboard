@@ -125,12 +125,15 @@ function drawChart(id,rows){
   const cW=W-PL-PR,cH=H-PT-PB;
   const mx=Math.max(...pcts,0);
 
-  // Если есть выброс (>400%), обрезаем ось на уровне остальных + 20%
+  // Умная шкала: ось = max(120, ближайший разумный потолок)
+  // Если кто-то >300%, ограничиваем ось по медиане*3, остальных обрезаем
   const sorted=[...pcts].sort((a,b)=>a-b);
-  const p90=sorted[Math.max(0,Math.floor(sorted.length*0.75))];
-  const CAP_THRESHOLD=400;
-  const useCap=mx>CAP_THRESHOLD && p90<mx*0.5;
-  const capVal=useCap?Math.max(120,Math.ceil((p90*1.4+20)/10)*10):null;
+  const median=sorted[Math.floor(sorted.length/2)]||0;
+  const CAP_THRESHOLD=300;
+  // capVal = max разумного отображения: медиана*3.5, но не меньше 120 и не меньше 2го по величине
+  const secondMax=sorted.length>1?sorted[sorted.length-2]:0;
+  const useCap=mx>CAP_THRESHOLD;
+  const capVal=useCap?Math.max(120,Math.ceil((Math.max(median*3.5,secondMax*1.25)+10)/10)*10):null;
   const sMax=useCap?capVal:Math.max(120,Math.ceil((mx+15)/10)*10);
 
   for(let i=0;i<=6;i++){
