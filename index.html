@@ -174,13 +174,14 @@ function drawChart(id,rows){
         ctx.fillRect(bx,zy,barW,2);
       }
     } else {
+      ctx.fillStyle=barColor(p);
       if(bh>r*2){
         ctx.beginPath();ctx.moveTo(bx+r,y);ctx.lineTo(bx+barW-r,y);
         ctx.quadraticCurveTo(bx+barW,y,bx+barW,y+r);
         ctx.lineTo(bx+barW,y+bh);ctx.lineTo(bx,y+bh);ctx.lineTo(bx,y+r);
         ctx.quadraticCurveTo(bx,y,bx+r,y);ctx.closePath();
+        ctx.fill();
       }else if(bh>0){ctx.fillRect(bx,y,barW,bh);}
-      ctx.fill();
     }
 
     // Лейбл % над столбцом
